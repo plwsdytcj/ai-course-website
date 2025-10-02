@@ -1,17 +1,14 @@
-import { useState } from 'react'
 import { Check, Star, Zap, Crown, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import PaymentModal from './PaymentModal'
 
 const PricingSection = () => {
-  const [paymentModal, setPaymentModal] = useState({ isOpen: false, plan: null })
-
   const handlePurchase = (plan) => {
-    setPaymentModal({ isOpen: true, plan })
-  }
-
-  const closePaymentModal = () => {
-    setPaymentModal({ isOpen: false, plan: null })
+    // 生成订单信息并跳转到支付页面
+    const orderId = `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`
+    const paymentUrl = `/payment?orderId=${orderId}&plan=${encodeURIComponent(plan.name)}&amount=${plan.price}`
+    
+    // 跳转到支付页面
+    window.location.href = paymentUrl
   }
   const plans = [
     {
@@ -205,12 +202,6 @@ const PricingSection = () => {
           </div>
         </div>
       </div>
-
-      <PaymentModal 
-        isOpen={paymentModal.isOpen}
-        onClose={closePaymentModal}
-        plan={paymentModal.plan}
-      />
     </section>
   )
 }
