@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Page Test</title>
+</head>
+<body>
+    <h1>Payment Page Test</h1>
+    <p>Testing payment page access...</p>
+    <script>
+        // 测试payment页面是否能正确加载
+        fetch('/payment')
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.text();
+            })
+            .then(html => {
+                console.log('Payment page loaded successfully');
+                document.body.innerHTML += '<p style="color: green;">✅ Payment page accessible</p>';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.body.innerHTML += '<p style="color: red;">❌ Payment page error: ' + error + '</p>';
+            });
+    </script>
+</body>
+</html>

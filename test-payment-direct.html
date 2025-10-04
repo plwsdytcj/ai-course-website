@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <h1>Payment页面测试</h1>
+    <div id="test-results"></div>
+    
+    <h2>测试步骤：</h2>
+    <ol>
+        <li>访问 <a href="/payment" target="_blank">/payment</a> 页面</li>
+        <li>检查是否显示支付页面内容</li>
+        <li>如果显示首页内容，说明路由有问题</li>
+    </ol>
+    
+    <h2>调试信息：</h2>
+    <div id="debug-info"></div>
+    
+    <script>
+        // 显示当前URL信息
+        const debugInfo = document.getElementById('debug-info');
+        debugInfo.innerHTML = `
+            <p><strong>当前URL:</strong> ${window.location.href}</p>
+            <p><strong>当前路径:</strong> ${window.location.pathname}</p>
+            <p><strong>是否为payment页面:</strong> ${window.location.pathname === '/payment' ? '是' : '否'}</p>
+        `;
+        
+        // 测试React应用
+        setTimeout(() => {
+            const root = document.getElementById('root');
+            if (root && root.innerHTML.trim() !== '') {
+                document.getElementById('test-results').innerHTML = 
+                    '<div class="test-result success">✅ React应用已加载</div>';
+            } else {
+                document.getElementById('test-results').innerHTML = 
+                    '<div class="test-result error">❌ React应用未加载</div>';
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

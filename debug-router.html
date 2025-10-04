@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Router Debug</title>
+</head>
+<body>
+    <h1>Router Debug Test</h1>
+    <div id="debug-info"></div>
+    
+    <script>
+        // 检查当前URL
+        const currentUrl = window.location.href;
+        const currentPath = window.location.pathname;
+        
+        document.getElementById('debug-info').innerHTML = `
+            <p><strong>Current URL:</strong> ${currentUrl}</p>
+            <p><strong>Current Path:</strong> ${currentPath}</p>
+            <p><strong>Expected for /payment:</strong> /payment</p>
+            <p><strong>Is payment page:</strong> ${currentPath === '/payment' ? 'YES' : 'NO'}</p>
+        `;
+        
+        // 测试React应用是否加载
+        setTimeout(() => {
+            const root = document.getElementById('root');
+            if (root && root.innerHTML.trim() !== '') {
+                document.getElementById('debug-info').innerHTML += '<p style="color: green;">✅ React app loaded</p>';
+            } else {
+                document.getElementById('debug-info').innerHTML += '<p style="color: red;">❌ React app not loaded</p>';
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

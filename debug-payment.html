@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Payment Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .debug-info { background: #f0f0f0; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Payment页面调试</h1>
+    
+    <div class="debug-info">
+        <h3>当前状态：</h3>
+        <p><strong>URL:</strong> <span id="current-url"></span></p>
+        <p><strong>Pathname:</strong> <span id="current-path"></span></p>
+        <p><strong>是否为payment页面:</strong> <span id="is-payment"></span></p>
+    </div>
+    
+    <div class="debug-info">
+        <h3>React应用状态：</h3>
+        <p id="react-status">检查中...</p>
+    </div>
+    
+    <div class="debug-info">
+        <h3>测试链接：</h3>
+        <p><a href="/">首页</a> | <a href="/payment">Payment页面</a></p>
+    </div>
+    
+    <script>
+        // 显示当前URL信息
+        document.getElementById('current-url').textContent = window.location.href;
+        document.getElementById('current-path').textContent = window.location.pathname;
+        document.getElementById('is-payment').textContent = window.location.pathname === '/payment' ? '是' : '否';
+        
+        // 检查React应用
+        setTimeout(() => {
+            const root = document.getElementById('root');
+            if (root && root.innerHTML.trim() !== '') {
+                document.getElementById('react-status').innerHTML = '<span class="success">✅ React应用已加载</span>';
+                
+                // 检查是否有PaymentPage的调试信息
+                const hasPaymentDebug = root.innerHTML.includes('PaymentPage component loaded');
+                if (hasPaymentDebug) {
+                    document.getElementById('react-status').innerHTML += '<br><span class="success">✅ PaymentPage组件已加载</span>';
+                } else {
+                    document.getElementById('react-status').innerHTML += '<br><span class="error">❌ PaymentPage组件未加载</span>';
+                }
+            } else {
+                document.getElementById('react-status').innerHTML = '<span class="error">❌ React应用未加载</span>';
+            }
+        }, 3000);
+        
+        // 监听URL变化
+        window.addEventListener('popstate', () => {
+            document.getElementById('current-url').textContent = window.location.href;
+            document.getElementById('current-path').textContent = window.location.pathname;
+            document.getElementById('is-payment').textContent = window.location.pathname === '/payment' ? '是' : '否';
+        });
+    </script>
+</body>
+</html>

@@ -9,6 +9,11 @@ const PaymentPage = () => {
   const [orderInfo, setOrderInfo] = useState(null)
   const [paymentStatus, setPaymentStatus] = useState('pending') // pending, success, failed
 
+  // 调试信息
+  console.log('PaymentPage component loaded')
+  console.log('Current URL:', window.location.href)
+  console.log('Current pathname:', window.location.pathname)
+
   useEffect(() => {
     // 从URL参数获取订单信息
     const orderId = searchParams.get('orderId') || `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`
