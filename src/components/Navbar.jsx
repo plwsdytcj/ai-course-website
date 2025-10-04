@@ -10,6 +10,8 @@ const Navbar = () => {
     { name: '课程介绍', href: '#course', icon: BookOpen },
     { name: '定价方案', href: '#pricing', icon: CreditCard },
     { name: '关于我们', href: '#about', icon: Users },
+    // 直达支付页面（用于调试/举证）
+    { name: '支付', href: '/payment', icon: CreditCard },
   ]
 
   return (
@@ -81,4 +83,3 @@ const Navbar = () => {
 }
 
 export default Navbar
-

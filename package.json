@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "pnpm rebuild rollup || true"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -71,6 +72,9 @@
     "globals": "^16.0.0",
     "tw-animate-css": "^1.2.9",
     "vite": "^6.3.5"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-darwin-arm64": "4.40.2"
   },
   "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af"
 }

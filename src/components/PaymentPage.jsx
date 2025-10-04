@@ -19,6 +19,12 @@ const PaymentPage = () => {
     const orderId = searchParams.get('orderId') || `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`
     const planName = searchParams.get('plan') || 'AI入门课程'
     const amount = searchParams.get('amount') || '299'
+    // 支持从URL获取更多交易相关字段，便于与举证交易一致
+    const recipientName = searchParams.get('name') || '学员姓名'
+    const recipientAddress = searchParams.get('address') || '在线课程服务'
+    const recipientPhone = searchParams.get('phone') || '138****8888'
+    const productDescription = searchParams.get('desc') || '专为文科生设计的AI入门课程，包含完整的学习资料和实践指导'
+    const paymentMethod = (searchParams.get('method') || 'alipay').toLowerCase()
     const currentTime = new Date()
     const formattedTime = currentTime.toLocaleString('zh-CN', {
       year: 'numeric',
@@ -29,24 +35,41 @@ const PaymentPage = () => {
       second: '2-digit'
     })
 
+    // 备案信息（写死）
+    const icpNumber = '闽ICP备2025109615号'
+    const icpServiceNo = '闽ICP备2025109615号-1'
+    const icpDomain = 'wenkexueai.com'
+    const icpEntity = '闽侯县好杰杰科技有限公司'
+    const icpDate = '2025-08-07'
+    const icpImage = '/icp.png' // 请将备案截图复制到 public/icp.png
+
     setOrderInfo({
       orderId,
       timestamp: formattedTime,
       timestampISO: currentTime.toISOString(),
       amount,
       productName: planName,
-      productDescription: '专为文科生设计的AI入门课程，包含完整的学习资料和实践指导',
+      productDescription,
       period: '永久访问',
-      websiteUrl: window.location.origin,
+      websiteUrl: 'https://www.wenkexueai.com',
       currentUrl: window.location.href,
-      recipientName: '学员姓名',
-      recipientAddress: '在线课程服务',
-      recipientPhone: '138****8888',
-      paymentMethod: 'alipay',
-      merchantName: 'AI启蒙学院',
-      merchantContact: '400-123-4567',
+      recipientName,
+      recipientAddress,
+      recipientPhone,
+      paymentMethod,
+      merchantName: icpEntity,
+      merchantContact: '0591-88005568',
       merchantLicense: '京ICP备2024000000号',
       businessLicense: '91110000MA00000000'
+      ,
+      icp: {
+        number: icpNumber,
+        serviceNo: icpServiceNo,
+        domain: icpDomain,
+        entity: icpEntity,
+        date: icpDate,
+        image: icpImage
+      }
     })
   }, [searchParams])
 
@@ -66,10 +89,10 @@ const PaymentPage = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">订单支付</h1>
+              <h1 className="text-2xl font-bold text-gray-900">支付宝支付</h1>
               <p className="text-gray-600 mt-1">请确认订单信息并完成支付</p>
             </div>
             <div className="text-right">
@@ -79,11 +102,19 @@ const PaymentPage = () => {
           </div>
         </div>
 
+        {/* URL 信息条（便于截图举证） */}
+        <div className="bg-gray-900 text-gray-100 rounded-md px-4 py-2 mb-6 overflow-x-auto">
+          <div className="flex items-center text-xs whitespace-nowrap">
+            <span className="opacity-80 mr-2">当前页面URL</span>
+            <span className="font-mono break-all">{orderInfo?.currentUrl}</span>
+          </div>
+        </div>
+
         {/* 详细交易信息 - 用于举证 */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div className="flex items-center mb-4">
             <Receipt className="h-5 w-5 text-blue-600 mr-2" />
-            <h2 className="text-lg font-semibold text-gray-900">交易详情（法律举证材料）</h2>
+            <h2 className="text-lg font-semibold text-gray-900">交易详情</h2>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -124,10 +155,7 @@ const PaymentPage = () => {
                   <span className="text-gray-600">网站地址：</span>
                   <span className="font-mono text-xs text-blue-600 break-all">{orderInfo?.websiteUrl}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">当前页面：</span>
-                  <span className="font-mono text-xs text-blue-600 break-all">{orderInfo?.currentUrl}</span>
-                </div>
+                {/* 去掉当前页面显示 */}
                 <div className="flex justify-between">
                   <span className="text-gray-600">收货人：</span>
                   <span className="font-semibold">{orderInfo?.recipientName}</span>
@@ -154,8 +182,8 @@ const PaymentPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">商户名称：</span>
-                  <span className="font-semibold">{orderInfo?.merchantName}</span>
+                  <span className="text-gray-600">备案主体：</span>
+                  <span className="font-semibold">{orderInfo?.icp?.entity || orderInfo?.merchantName}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">客服电话：</span>
@@ -165,11 +193,58 @@ const PaymentPage = () => {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">ICP备案号：</span>
-                  <span className="font-mono text-xs">{orderInfo?.merchantLicense}</span>
+                  <span className="font-mono text-xs">{orderInfo?.icp?.number || orderInfo?.merchantLicense}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">营业执照号：</span>
                   <span className="font-mono text-xs">{orderInfo?.businessLicense}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 备案信息（含截图，便于举证） */}
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">备案主体：</span>
+                    <span className="font-medium">{orderInfo?.icp?.entity || '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">网站域名：</span>
+                    <span className="font-mono">{orderInfo?.icp?.domain}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">主体备案号：</span>
+                    <span className="font-mono text-xs">{orderInfo?.icp?.number || '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">服务备案号：</span>
+                    <span className="font-mono text-xs">{orderInfo?.icp?.serviceNo || '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">审核通过日期：</span>
+                    <span className="font-mono text-xs">{orderInfo?.icp?.date || '—'}</span>
+                  </div>
+                  <div className="mt-2">
+                    <a 
+                      href="https://beian.miit.gov.cn/#/Integrated/recordQuery" 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="text-blue-600 hover:text-blue-700 underline text-xs"
+                    >
+                      前往工信部备案查询
+                    </a>
+                  </div>
+                </div>
+                <div className="">
+                  {/* 备案截图（找不到时自动隐藏） */}
+                  <img 
+                    src={orderInfo?.icp?.image}
+                    alt="备案信息截图"
+                    className="rounded-md border w-full object-contain max-h-64"
+                    onError={(e) => { e.currentTarget.style.display = 'none' }}
+                  />
                 </div>
               </div>
             </div>
