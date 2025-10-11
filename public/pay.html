@@ -156,16 +156,65 @@
 
     if (orderNo) {
       document.getElementById('orderno').textContent = orderNo;
+      
+      // 页面加载完成后自动调起支付
+      if (typeof WeixinJSBridge !== 'undefined') {
+        startPay();
+      } else {
+        document.addEventListener('WeixinJSBridgeReady', function() {
+          startPay();
+        });
+      }
     }
 
     // 微信JSAPI支付
-    function startPay() {
-      // 完整的 JSAPI 支付流程：
-      // 1. 后端调用微信支付统一下单接口获取 prepay_id
-      // 2. 后端生成签名参数
-      // 3. 前端调用 wx.chooseWXPay 或 WeixinJSBridge.invoke
-      
-      alert('⚠️ 演示说明\n\n完整的 JSAPI 支付需要：\n\n1. 微信商户号和证书\n2. 后端调用统一下单 API\n3. 获取 prepay_id\n4. 前端调起支付\n\n请使用"测试充值"按钮模拟充值');
+    async function startPay() {
+      try {
+        // 从后端获取支付参数
+        const response = await fetch(`/api/pay/params/${orderNo}`);
+        const data = await response.json();
+        
+        if (!data.payParams) {
+          alert('❌ 获取支付参数失败');
+          return;
+        }
+
+        const { appId, timeStamp, nonceStr, package: packageStr, signType, paySign } = data.payParams;
+
+        // 检查是否在微信环境
+        if (typeof WeixinJSBridge === 'undefined') {
+          alert('请在微信中打开');
+          return;
+        }
+
+        // 调起微信支付
+        WeixinJSBridge.invoke(
+          'getBrandWCPayRequest',
+          {
+            appId: appId,
+            timeStamp: timeStamp,
+            nonceStr: nonceStr,
+            package: packageStr,
+            signType: signType,
+            paySign: paySign
+          },
+          function(res) {
+            if (res.err_msg == "get_brand_wcpay_request:ok") {
+              alert('✅ 支付成功！\n\ncredits 将在3秒内到账');
+              setTimeout(() => {
+                window.location.href = 'weixin://';
+              }, 3000);
+            } else if (res.err_msg == "get_brand_wcpay_request:cancel") {
+              alert('⚠️ 支付已取消');
+            } else {
+              alert('❌ 支付失败: ' + res.err_msg);
+            }
+          }
+        );
+      } catch (error) {
+        console.error('调起支付失败:', error);
+        alert('⚠️ 当前为演示环境\n\n请点击下方"测试充值"按钮模拟充值');
+      }
       
       /* 实际的支付代码示例：
       

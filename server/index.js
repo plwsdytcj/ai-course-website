@@ -34,6 +34,9 @@ const CREDIT_PER_MESSAGE = 1; // 每条消息消耗1个credit
 // 用户数据存储（简单的内存存储，生产环境应使用数据库）
 const userDataStore = new Map();
 
+// 订单存储（临时存储订单和支付参数）
+const orderStore = new Map();
+
 // 保存或更新用户信息
 function saveUserData(openId, data) {
   if (!userDataStore.has(openId)) {
@@ -164,6 +167,18 @@ async function createWxPayOrder(openId, priceKey) {
       signType: 'RSA',
       paySign: paySign
     };
+
+    // 保存订单和支付参数
+    orderStore.set(orderNo, {
+      orderNo,
+      openId,
+      priceKey,
+      amount: priceInfo.amount,
+      credits: priceInfo.credits,
+      payParams,
+      createTime: new Date(),
+      status: 'pending'
+    });
 
     return {
       orderNo,
@@ -685,6 +700,28 @@ const server = http.createServer((req, res) => {
   }
 
   // 模拟支付测试接口
+  // 获取支付参数接口
+  if (req.method === 'GET' && url.pathname.startsWith('/api/pay/params/')) {
+    const orderNo = url.pathname.split('/').pop();
+    const orderInfo = orderStore.get(orderNo);
+    
+    if (orderInfo) {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({
+        success: true,
+        orderNo: orderInfo.orderNo,
+        amount: orderInfo.amount,
+        credits: orderInfo.credits,
+        payParams: orderInfo.payParams
+      }));
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ success: false, message: '订单不存在' }));
+    }
+    return;
+  }
+
+  // 测试充值接口（开发调试用）
   if (req.method === 'GET' && url.pathname === '/api/pay/test') {
     const openId = url.searchParams.get('openid');
     const credits = parseInt(url.searchParams.get('credits')) || 50;
