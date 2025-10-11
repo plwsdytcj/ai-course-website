@@ -10,6 +10,12 @@ const WECHAT_APPID = process.env.WX_APPID;
 const WECHAT_APPSECRET = process.env.WX_APPSECRET;
 const WECHAT_ENCODING_AES_KEY = process.env.WX_ENCODING_AES_KEY;
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+
+// 全局 access_token 缓存
+let accessTokenCache = {
+  token: null,
+  expiresAt: 0
+};
 const WX_MCHID = process.env.WX_MCHID; // 微信商户号
 const WX_PAY_KEY = process.env.WX_PAY_KEY; // 商户密钥
 const WX_PAY_CERT_SERIAL = process.env.WX_PAY_CERT_SERIAL; // 证书序列号
@@ -337,6 +343,92 @@ function buildNewsReplyXML(toUser, fromUser, articles) {
   <Articles>${articlesXML}
   </Articles>
 </xml>`;
+}
+
+// 获取微信 access_token
+async function getAccessToken() {
+  // 检查缓存是否有效
+  if (accessTokenCache.token && Date.now() < accessTokenCache.expiresAt) {
+    return accessTokenCache.token;
+  }
+
+  return new Promise((resolve, reject) => {
+    const url = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${WECHAT_APPID}&secret=${WECHAT_APPSECRET}`;
+    
+    https.get(url, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          if (result.access_token) {
+            // 缓存 token（提前5分钟过期）
+            accessTokenCache.token = result.access_token;
+            accessTokenCache.expiresAt = Date.now() + (result.expires_in - 300) * 1000;
+            console.log('✓ 获取 access_token 成功');
+            resolve(result.access_token);
+          } else {
+            console.error('获取 access_token 失败:', result);
+            reject(new Error(result.errmsg || '获取失败'));
+          }
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }).on('error', reject);
+  });
+}
+
+// 发送客服消息（主动推送给用户）
+async function sendCustomerMessage(openId, content) {
+  try {
+    const accessToken = await getAccessToken();
+    const url = `https://api.weixin.qq.com/cgi-bin/message/custom/send?access_token=${accessToken}`;
+    
+    const messageData = JSON.stringify({
+      touser: openId,
+      msgtype: 'text',
+      text: {
+        content: content
+      }
+    });
+
+    return new Promise((resolve, reject) => {
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(messageData)
+        }
+      };
+
+      const req = https.request(url, options, (res) => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          try {
+            const result = JSON.parse(data);
+            if (result.errcode === 0) {
+              console.log(`✓ 客服消息发送成功: ${openId}`);
+              resolve(true);
+            } else {
+              console.error('发送客服消息失败:', result);
+              reject(new Error(result.errmsg || '发送失败'));
+            }
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+
+      req.on('error', reject);
+      req.write(messageData);
+      req.end();
+    });
+  } catch (error) {
+    console.error('发送客服消息出错:', error);
+    return false;
+  }
 }
 
 // 调用 DeepSeek API
@@ -687,8 +779,38 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         // 解析支付回调数据
-        const paymentData = JSON.parse(body);
-        console.log('收到支付回调:', paymentData);
+        const callbackData = JSON.parse(body);
+        console.log('收到支付回调:', callbackData);
+
+        // 解密支付数据
+        let paymentData = null;
+        if (callbackData.resource && callbackData.resource.ciphertext) {
+          // 微信支付回调数据是加密的，需要解密
+          const { ciphertext, nonce, associated_data } = callbackData.resource;
+          
+          // 解密数据
+          const ciphertextBuffer = Buffer.from(ciphertext, 'base64');
+          const authTag = ciphertextBuffer.slice(-16); // 最后16字节是认证标签
+          const encryptedData = ciphertextBuffer.slice(0, -16); // 前面的是密文
+          
+          const decipher = crypto.createDecipheriv(
+            'aes-256-gcm',
+            WX_PAY_KEY,
+            nonce
+          );
+          
+          decipher.setAuthTag(authTag);
+          decipher.setAAD(Buffer.from(associated_data));
+          
+          let decrypted = decipher.update(encryptedData, null, 'utf8');
+          decrypted += decipher.final('utf8');
+          
+          paymentData = JSON.parse(decrypted);
+          console.log('解密后的支付数据:', paymentData);
+        } else {
+          // 如果没有加密（测试环境可能会遇到）
+          paymentData = callbackData;
+        }
 
         // TODO: 验证签名（生产环境必须）
         
@@ -721,6 +843,21 @@ const server = http.createServer((req, res) => {
               time: new Date()
             });
           }
+
+          // 主动推送充值成功消息给用户
+          const successMessage = `🎉 充值成功！
+
+💰 充值金额：${(amount / 100).toFixed(2)}元
+✨ 到账次数：+${credits}次
+📊 当前余额：${newBalance}次
+
+感谢您的支持！继续和我聊天吧~
+回复"余额"查看详情`;
+
+          // 异步发送消息（不阻塞回调响应）
+          sendCustomerMessage(openId, successMessage).catch(err => {
+            console.error('发送充值成功消息失败:', err);
+          });
         }
 
         // 返回成功响应给微信
