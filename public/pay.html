@@ -200,14 +200,17 @@
           },
           function(res) {
             if (res.err_msg == "get_brand_wcpay_request:ok") {
-              alert('✅ 支付成功！\n\ncredits 将在3秒内到账');
-              setTimeout(() => {
-                window.location.href = 'weixin://';
-              }, 3000);
+              // 支付成功，直接关闭页面
+              WeixinJSBridge.call('closeWindow');
             } else if (res.err_msg == "get_brand_wcpay_request:cancel") {
-              alert('⚠️ 支付已取消');
+              // 用户取消支付，关闭页面
+              WeixinJSBridge.call('closeWindow');
             } else {
-              alert('❌ 支付失败: ' + res.err_msg);
+              // 支付失败，提示后关闭
+              alert('支付失败，请重试');
+              setTimeout(() => {
+                WeixinJSBridge.call('closeWindow');
+              }, 1500);
             }
           }
         );
@@ -292,8 +295,12 @@
     }
 
     function goBack() {
-      // 返回公众号对话
-      window.location.href = 'weixin://';
+      // 关闭当前页面，返回微信
+      if (typeof WeixinJSBridge !== 'undefined') {
+        WeixinJSBridge.call('closeWindow');
+      } else {
+        window.close();
+      }
     }
 
     // 页面加载完成后的提示
