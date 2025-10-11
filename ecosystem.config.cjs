@@ -4,8 +4,8 @@ module.exports = {
     script: './server/index.js',
     
     // Cluster 模式 - 多进程
-    instances: 'max',  // 使用所有CPU核心
-    exec_mode: 'cluster',
+    instances: 1,  // 临时使用单进程，避免数据不共享问题
+    exec_mode: 'fork',  // fork模式（单进程）
     
     // 环境变量
     env: {

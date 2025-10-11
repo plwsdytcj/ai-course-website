@@ -3,6 +3,7 @@ import http from 'http';
 import https from 'https';
 import crypto from 'crypto';
 import fs from 'fs';
+import { callDeepSeekWithTools } from './function-calling.js';
 
 const PORT = process.env.PORT || 3000;
 const WECHAT_TOKEN = process.env.WX_TOKEN || '88005568';
@@ -708,7 +709,19 @@ const server = http.createServer((req, res) => {
                 ]
               });
               
-              replyContent = await handleTextMessage(userText);
+              // 使用 Function Calling（AI自动判断意图并调用工具）
+              const context = {
+                openId: userOpenId,
+                getUserData: getUserData,
+                createWxPayOrder: createWxPayOrder
+              };
+              
+              try {
+                replyContent = await callDeepSeekWithTools(userText, context);
+              } catch (error) {
+                console.error('Function Calling 失败，回退到普通AI:', error);
+                replyContent = await handleTextMessage(userText);
+              }
               
               // 在回复中显示剩余次数
               const remainingCredits = userData.credits;
