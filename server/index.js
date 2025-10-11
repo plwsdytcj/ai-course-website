@@ -317,6 +317,28 @@ function buildReplyXML(toUser, fromUser, content) {
 </xml>`;
 }
 
+// 构建图文消息XML
+function buildNewsReplyXML(toUser, fromUser, articles) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const articlesXML = articles.map(article => `
+    <item>
+      <Title><![CDATA[${article.title}]]></Title>
+      <Description><![CDATA[${article.description}]]></Description>
+      <PicUrl><![CDATA[${article.picUrl}]]></PicUrl>
+      <Url><![CDATA[${article.url}]]></Url>
+    </item>`).join('');
+  
+  return `<xml>
+  <ToUserName><![CDATA[${toUser}]]></ToUserName>
+  <FromUserName><![CDATA[${fromUser}]]></FromUserName>
+  <CreateTime>${timestamp}</CreateTime>
+  <MsgType><![CDATA[news]]></MsgType>
+  <ArticleCount>${articles.length}</ArticleCount>
+  <Articles>${articlesXML}
+  </Articles>
+</xml>`;
+}
+
 // 调用 DeepSeek API
 async function callDeepSeekAPI(userMessage) {
   return new Promise((resolve, reject) => {
@@ -559,7 +581,21 @@ const server = http.createServer((req, res) => {
             const priceKey = userText.replace('充值 ', '').trim();
             try {
               const order = await createWxPayOrder(userOpenId, priceKey);
-              replyContent = `💰 充值订单\n\n套餐：${CREDIT_PRICE[priceKey].desc}\n金额：${order.amount / 100}元\n\n请点击链接支付：\n${order.payUrl}\n\n订单号：${order.orderNo}\n有效期：30分钟`;
+              // 使用图文消息返回支付链接
+              const replyMsg = buildNewsReplyXML(
+                message.FromUserName,  // 发给用户
+                message.ToUserName,    // 来自公众号
+                [{
+                  title: `💰 充值订单已创建`,
+                  description: `套餐：${CREDIT_PRICE[priceKey].desc}\n金额：${order.amount / 100}元\n点击卡片立即支付`,
+                  picUrl: 'https://wenkexueai.com/pay-icon.png',
+                  url: order.payUrl
+                }]
+              );
+              res.writeHead(200, { 'Content-Type': 'application/xml' });
+              res.end(replyMsg);
+              console.log(`✓ 已发送充值订单图文消息: ${CREDIT_PRICE[priceKey].desc}`);
+              return; // 直接返回，不继续执行后面的代码
             } catch (error) {
               replyContent = '❌ 创建订单失败\n\n' + getRechargeMenu();
             }
