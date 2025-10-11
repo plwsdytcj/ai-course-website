@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>微信支付 - AI文科生课程</title>
+  <script src="https://res.wx.qq.com/open/js/jweixin-1.6.0.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+    .order-info {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+    .info-label {
+      color: #666;
+    }
+    .info-value {
+      font-weight: 600;
+      color: #333;
+    }
+    .amount {
+      font-size: 24px;
+      color: #667eea;
+    }
+    .qr-code {
+      background: white;
+      border: 2px solid #eee;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .qr-code img {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto;
+    }
+    .tips {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .button {
+      width: 100%;
+      padding: 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .button:hover {
+      background: #5568d3;
+    }
+    .demo-notice {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+      color: #856404;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>💰 充值对话次数</h1>
+    
+    <div class="demo-notice">
+      ⚠️ 演示环境<br>
+      实际支付需要完整配置微信商户号和证书
+    </div>
+
+    <div class="order-info">
+      <div class="info-row">
+        <span class="info-label">充值套餐</span>
+        <span class="info-value" id="package">1元50次</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">支付金额</span>
+        <span class="info-value amount" id="amount">¥1.00</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">订单号</span>
+        <span class="info-value" id="orderno" style="font-size: 12px;">...</span>
+      </div>
+    </div>
+
+    <div class="tips" style="margin: 30px 0;">
+      💡 JSAPI 支付流程：<br><br>
+      1. 点击下方按钮调起微信支付<br>
+      2. 输入密码完成支付<br>
+      3. 支付成功后自动到账<br><br>
+      有效期：30分钟
+    </div>
+
+    <button class="button" onclick="startPay()" id="payBtn">立即支付</button>
+    <button class="button" onclick="testRecharge()" style="background: #28a745;">测试充值（开发用）</button>
+    <button class="button" onclick="goBack()" style="background: #6c757d;">返回公众号</button>
+  </div>
+
+  <script>
+    // 从URL获取参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderNo = urlParams.get('order');
+    const priceKey = urlParams.get('price');
+    const openId = urlParams.get('openid');
+
+    const prices = {
+      '1': { desc: '1元50次', amount: 1, credits: 50 },
+      '5': { desc: '5元300次', amount: 5, credits: 300 },
+      '10': { desc: '10元700次', amount: 10, credits: 700 }
+    };
+
+    // 显示订单信息
+    if (priceKey && prices[priceKey]) {
+      document.getElementById('package').textContent = prices[priceKey].desc;
+      document.getElementById('amount').textContent = '¥' + prices[priceKey].amount + '.00';
+    }
+
+    if (orderNo) {
+      document.getElementById('orderno').textContent = orderNo;
+    }
+
+    // 微信JSAPI支付
+    function startPay() {
+      // 完整的 JSAPI 支付流程：
+      // 1. 后端调用微信支付统一下单接口获取 prepay_id
+      // 2. 后端生成签名参数
+      // 3. 前端调用 wx.chooseWXPay 或 WeixinJSBridge.invoke
+      
+      alert('⚠️ 演示说明\n\n完整的 JSAPI 支付需要：\n\n1. 微信商户号和证书\n2. 后端调用统一下单 API\n3. 获取 prepay_id\n4. 前端调起支付\n\n请使用"测试充值"按钮模拟充值');
+      
+      /* 实际的支付代码示例：
+      
+      // 方式1：使用 WeixinJSBridge (推荐)
+      if (typeof WeixinJSBridge != "undefined") {
+        WeixinJSBridge.invoke(
+          'getBrandWCPayRequest', {
+            "appId": "wx6f8828f74075acb4",     // 公众号AppID
+            "timeStamp": "1234567890",         // 时间戳
+            "nonceStr": "randomstring",        // 随机字符串
+            "package": "prepay_id=xxxxx",      // 预支付交易会话标识
+            "signType": "RSA",                 // 签名方式
+            "paySign": "xxxxx"                 // 签名
+          },
+          function(res) {
+            if (res.err_msg == "get_brand_wcpay_request:ok") {
+              alert('支付成功！');
+              window.location.href = 'weixin://';
+            } else if (res.err_msg == "get_brand_wcpay_request:cancel") {
+              alert('支付取消');
+            } else {
+              alert('支付失败: ' + res.err_msg);
+            }
+          }
+        );
+      }
+      
+      // 方式2：使用 wx.chooseWXPay (需要先配置wx.config)
+      wx.chooseWXPay({
+        timestamp: 0,
+        nonceStr: '',
+        package: '',
+        signType: 'RSA',
+        paySign: '',
+        success: function (res) {
+          alert('支付成功');
+        },
+        cancel: function (res) {
+          alert('支付取消');
+        },
+        fail: function (res) {
+          alert('支付失败');
+        }
+      });
+      
+      */
+    }
+
+    // 测试充值（开发环境用）
+    function testRecharge() {
+      if (!openId) {
+        alert('❌ 缺少 openId 参数');
+        return;
+      }
+
+      const credits = prices[priceKey]?.credits || 50;
+      
+      if (confirm(`确认测试充值 ${credits} 次对话？`)) {
+        fetch(`/api/pay/test?openid=${openId}&credits=${credits}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              alert(`✅ ${data.message}\n\n当前余额：${data.newBalance} 次`);
+              setTimeout(() => {
+                goBack();
+              }, 1500);
+            } else {
+              alert('❌ 充值失败：' + data.message);
+            }
+          })
+          .catch(err => {
+            alert('❌ 请求失败：' + err.message);
+          });
+      }
+    }
+
+    function goBack() {
+      // 返回公众号对话
+      window.location.href = 'weixin://';
+    }
+
+    // 页面加载完成后的提示
+    window.onload = function() {
+      console.log('订单信息:', { orderNo, priceKey, openId });
+    };
+  </script>
+</body>
+</html>
+

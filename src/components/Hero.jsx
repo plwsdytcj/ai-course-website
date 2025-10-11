@@ -47,7 +47,7 @@ const Hero = () => {
 
           {/* Subtitle */}
           <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto">
-            从人文视角理解AI，用文科思维掌握人工智能，
+            从人文ss视角理解AI，用文科思维掌握人工智能，
             在AI时代找到属于你的独特价值
           </p>
 
